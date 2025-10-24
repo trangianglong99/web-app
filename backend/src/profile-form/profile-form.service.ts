@@ -55,7 +55,6 @@ export class ProfileFormService {
       where: {
         fullName: {
           contains: fullName,
-          mode: 'insensitive',
         },
       },
       orderBy: {
@@ -69,7 +68,6 @@ export class ProfileFormService {
       where: {
         ward: {
           contains: ward,
-          mode: 'insensitive',
         },
       },
       orderBy: {

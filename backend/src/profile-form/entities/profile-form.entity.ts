@@ -1,3 +1,3 @@
-import { Prisma } from '@prisma/client';
+import { ProfileForm } from '@prisma/client';
 
-export type ProfileFormEntity = Prisma.ProfileFormGetPayload<{}>;
+export type ProfileFormEntity = ProfileForm;
