@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import MilitaryService from "./pages/MilitaryService";
+import MilitaryDetail from "./pages/MilitaryDetail";
 import Layout from "./components/Layout";
 import Militia from "./pages/Militia";
 import Attendance from "./pages/Attendance";
@@ -18,24 +19,24 @@ function App() {
 
   useEffect(() => {
     checkAuth();
-    
+
     // Listen for storage changes (when login/logout happens in another tab)
     const handleStorageChange = () => {
       checkAuth();
     };
-    
-    window.addEventListener('storage', handleStorageChange);
-    
+
+    window.addEventListener("storage", handleStorageChange);
+
     // Also listen for custom events (for same-tab changes)
     const handleAuthChange = () => {
       checkAuth();
     };
-    
-    window.addEventListener('authChange', handleAuthChange);
-    
+
+    window.addEventListener("authChange", handleAuthChange);
+
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('authChange', handleAuthChange);
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("authChange", handleAuthChange);
     };
   }, []);
 
@@ -68,6 +69,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/military" replace />} />
         <Route path="/military" element={<MilitaryService />} />
+        <Route path="/military/detail/:id" element={<MilitaryDetail />} />
         <Route path="/militia" element={<Militia />} />
         <Route path="/attendance" element={<Attendance />} />
         <Route path="/login" element={<Navigate to="/military" replace />} />

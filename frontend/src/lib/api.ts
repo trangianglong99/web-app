@@ -1,5 +1,5 @@
-const BASE_URL = import.meta.env.VITE_API_URL;
-const withBase = (path: string) => `${BASE_URL}/api${path}`;
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const withBase = (path: string) => `${BASE_URL}${path}`;
 
 const getAuthHeaders = (includeAuth = true) => {
   const token = localStorage.getItem('token');
@@ -35,18 +35,23 @@ export async function apiGet<T>(
 }
 
 export async function apiPost<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(withBase(path), {
+  const url = withBase(path);
+  console.log("API POST:", url, body);
+  const res = await fetch(url, {
     method: "POST",
     headers: getAuthHeaders(),
     body: JSON.stringify(body),
   });
   if (!res.ok) {
+    console.error("API POST Error:", res.status, res.statusText);
     if (res.status === 401) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/login';
     }
-    throw new Error(await res.text());
+    const errorText = await res.text();
+    console.error("Error response:", errorText);
+    throw new Error(errorText);
   }
   
   // Handle empty response (common with 201 Created)

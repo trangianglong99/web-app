@@ -17,9 +17,10 @@ export class MilitaryController {
   findAll(
     @Query('q') q?: string,
     @Query('status') status?: MilitaryStatus,
-    @Query('ward') ward?: string,
+    @Query('permanentResidence') permanentResidence?: string,
+    @Query('specificAddress') specificAddress?: string,
   ) {
-    return this.militaryService.findAll({ q, status, ward });
+    return this.militaryService.findAll({ q, status, permanentResidence, specificAddress });
   }
 
   @Get(':id')

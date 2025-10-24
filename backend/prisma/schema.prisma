@@ -59,16 +59,22 @@ model Sequence {
 }
 
 model Military {
-  id          String         @id @default(uuid())
-  recordCode  String?        @unique
-  fullName    String
-  dateOfBirth DateTime
-  idNumber    String         @unique
-  ward        String
-  unit        String?
-  status      MilitaryStatus
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  id                String         @id @default(uuid()) // Ẩn khỏi UI
+  recordCode        String?        @unique // Mã hồ sơ
+  fullName          String         // Họ và tên
+  dateOfBirth       DateTime       // Ngày sinh
+  occupation        String?        // Nghề nghiệp
+  permanentResidence String?       // Hộ khẩu thường trú (Khu phố)
+  specificAddress   String?        // Địa chỉ cụ thể
+  ethnicity         String?        // Dân tộc
+  religion          String?        // Tôn giáo
+  education         String?        // Học vấn, Chuyên môn kỹ thuật
+  graduationStatus  String?        // Đã tốt nghiệp hoặc niên khóa đang học
+  partyMember       String?        // Đảng viên, đoàn viên hay không
+  familyInfo        String?        // Thông tin Cha, Mẹ, Vợ/Chồng, nghề nghiệp
+  status            MilitaryStatus @default(CHUA_NHAP_NGU)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
 }
 
 model Militia {

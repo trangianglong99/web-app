@@ -1,68 +1,66 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  apiDelete,
-  apiGet,
-  apiPost,
-  apiPut,
-  militaryStatusFromApi,
-  militaryStatusToApi,
-  getProfileCode,
-} from "../lib/api";
+import { useNavigate } from "react-router-dom";
+import * as XLSX from "xlsx";
+import { apiDelete, apiGet, apiPost, apiPut, getProfileCode } from "../lib/api";
 
 type ServiceRecord = {
   id: string;
-  code: string; // Mã hồ sơ (hiển thị cho người dùng)
+  recordCode: string; // Mã hồ sơ
   fullName: string;
   dateOfBirth: string;
-  idNumber: string;
-  ward?: string;
-  unit?: string;
-  status: "Chưa nhập ngũ" | "Đang tại ngũ" | "Xuất ngũ";
+  occupation?: string;
+  permanentResidence?: string; // Hộ khẩu thường trú - Khu phố
+  specificAddress?: string; // Địa chỉ cụ thể
+  ethnicity?: string;
+  religion?: string;
+  education?: string;
+  graduationStatus?: string;
+  partyMember?: string;
+  familyInfo?: string;
 };
 
 const initialData: ServiceRecord[] = [];
 
-const statusOptions: ServiceRecord["status"][] = [
-  "Chưa nhập ngũ",
-  "Đang tại ngũ",
-  "Xuất ngũ",
-];
-
 const MilitaryService = () => {
+  const navigate = useNavigate();
   const [records, setRecords] = useState<ServiceRecord[]>(initialData);
   const [query, setQuery] = useState("");
-  const [status, setStatus] = useState<string>("");
   const [wardFilter, setWardFilter] = useState<string>("");
+  const [addressFilter, setAddressFilter] = useState<string>("");
   const [editing, setEditing] = useState<ServiceRecord | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [idNumberError, setIdNumberError] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState<{
     show: boolean;
     id: string;
     name: string;
   }>({ show: false, id: "", name: "" });
   const [formData, setFormData] = useState({
-    code: "",
+    recordCode: "",
     fullName: "",
     dateOfBirth: "",
-    idNumber: "",
-    ward: "",
-    unit: "",
-    status: "Chưa nhập ngũ" as ServiceRecord["status"],
+    occupation: "",
+    permanentResidence: "",
+    specificAddress: "",
+    ethnicity: "",
+    religion: "",
+    education: "",
+    graduationStatus: "",
+    partyMember: "",
+    familyInfo: "",
   });
   const [errors, setErrors] = useState<{
     [K in keyof Pick<
       ServiceRecord,
-      "code" | "fullName" | "dateOfBirth" | "idNumber" | "ward"
+      "recordCode" | "fullName" | "dateOfBirth" | "permanentResidence"
     >]?: boolean;
   }>({});
 
   const loadList = async () => {
     const data = await apiGet<any>("/military", {
       q: query || undefined,
-      status: status ? militaryStatusToApi(status) : undefined,
       ward: wardFilter || undefined,
+      address: addressFilter || undefined,
       page: currentPage,
       limit: 10,
     });
@@ -71,13 +69,18 @@ const MilitaryService = () => {
       setRecords(
         data.data.map((d: any) => ({
           id: d.id,
-          code: d.recordCode || d.code || d.profileCode || d.maHoSo || "",
+          recordCode: d.recordCode || "",
           fullName: d.fullName,
           dateOfBirth: String(d.dateOfBirth).slice(0, 10),
-          idNumber: d.idNumber,
-          ward: d.ward,
-          unit: d.unit ?? "",
-          status: militaryStatusFromApi(d.status) as ServiceRecord["status"],
+          occupation: d.occupation || "",
+          permanentResidence: d.permanentResidence || "",
+          specificAddress: d.specificAddress || "",
+          ethnicity: d.ethnicity || "",
+          religion: d.religion || "",
+          education: d.education || "",
+          graduationStatus: d.graduationStatus || "",
+          partyMember: d.partyMember || "",
+          familyInfo: d.familyInfo || "",
         }))
       );
       setTotalPages(Math.ceil(data.total / 10));
@@ -86,13 +89,18 @@ const MilitaryService = () => {
       setRecords(
         data.map((d: any) => ({
           id: d.id,
-          code: d.recordCode || d.code || d.profileCode || d.maHoSo || "",
+          recordCode: d.recordCode || "",
           fullName: d.fullName,
           dateOfBirth: String(d.dateOfBirth).slice(0, 10),
-          idNumber: d.idNumber,
-          ward: d.ward,
-          unit: d.unit ?? "",
-          status: militaryStatusFromApi(d.status) as ServiceRecord["status"],
+          occupation: d.occupation || "",
+          permanentResidence: d.permanentResidence || "",
+          specificAddress: d.specificAddress || "",
+          ethnicity: d.ethnicity || "",
+          religion: d.religion || "",
+          education: d.education || "",
+          graduationStatus: d.graduationStatus || "",
+          partyMember: d.partyMember || "",
+          familyInfo: d.familyInfo || "",
         }))
       );
       setTotalPages(1);
@@ -101,22 +109,32 @@ const MilitaryService = () => {
 
   useEffect(() => {
     loadList();
-  }, [query, status, wardFilter, currentPage]);
+  }, [query, wardFilter, addressFilter, currentPage]);
 
   const filtered = useMemo(() => {
     return records.filter((r) => {
-      const matchText = `${r.code} ${r.fullName} ${r.idNumber} ${
-        r.ward ?? ""
-      } ${r.unit ?? ""}`
+      const matchText = `${r.recordCode} ${r.fullName} ${
+        r.permanentResidence ?? ""
+      } ${r.specificAddress ?? ""} ${r.occupation ?? ""} ${r.ethnicity ?? ""} ${
+        r.religion ?? ""
+      } ${r.education ?? ""} ${r.graduationStatus ?? ""} ${
+        r.partyMember ?? ""
+      } ${r.familyInfo ?? ""}`
         .toLowerCase()
         .includes(query.toLowerCase());
-      const matchStatus = status ? r.status === status : true;
       const matchWard = wardFilter
-        ? (r.ward || "").toLowerCase() === wardFilter.toLowerCase()
+        ? (r.permanentResidence || "")
+            .toLowerCase()
+            .includes(wardFilter.toLowerCase())
         : true;
-      return matchText && matchStatus && matchWard;
+      const matchAddress = addressFilter
+        ? (r.specificAddress || "")
+            .toLowerCase()
+            .includes(addressFilter.toLowerCase())
+        : true;
+      return matchText && matchWard && matchAddress;
     });
-  }, [records, query, status, wardFilter]);
+  }, [records, query, wardFilter, addressFilter]);
 
   // Client-side pagination fallback
   const paginatedRecords = useMemo(() => {
@@ -139,55 +157,62 @@ const MilitaryService = () => {
   const resetForm = () => {
     setEditing(null);
     setFormData({
-      code: "",
+      recordCode: "",
       fullName: "",
       dateOfBirth: "",
-      idNumber: "",
-      ward: "",
-      unit: "",
-      status: "Chưa nhập ngũ",
+      occupation: "",
+      permanentResidence: "",
+      specificAddress: "",
+      ethnicity: "",
+      religion: "",
+      education: "",
+      graduationStatus: "",
+      partyMember: "",
+      familyInfo: "",
     });
     setErrors({});
-    setIdNumberError("");
   };
 
   const wards = [
     "Trung",
     "Đông",
     "Phú Hội",
-    "đồng an 1",
-    "đồng an 2",
-    "đồng an 3",
-    "bình đức 1",
-    "bình đức 2",
-    "bình đức 3",
-    "bình đáng",
-    "đông ba",
+    "Đồng an 1",
+    "Đồng an 2",
+    "Đồng an 3",
+    "Bình Đức 1",
+    "Bình Đức 2",
+    "Bình Đức 3",
+    "Bình Đáng",
+    "Đông Ba",
   ];
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     const newErrors: typeof errors = {
-      code: !formData.code,
+      recordCode: !formData.recordCode,
       fullName: !formData.fullName,
       dateOfBirth: !formData.dateOfBirth,
-      idNumber: !formData.idNumber,
-      ward: !formData.ward,
+      permanentResidence: !formData.permanentResidence,
     };
     setErrors(newErrors);
-    setIdNumberError("");
     const hasError = Object.values(newErrors).some(Boolean);
     if (hasError) return;
 
     const payload = {
-      recordCode: formData.code,
+      recordCode: formData.recordCode,
       fullName: formData.fullName,
       dateOfBirth: formData.dateOfBirth,
-      idNumber: formData.idNumber,
-      ward: formData.ward,
-      unit: formData.unit || undefined,
-      status: militaryStatusToApi(formData.status),
+      occupation: formData.occupation || undefined,
+      permanentResidence: formData.permanentResidence || undefined,
+      specificAddress: formData.specificAddress || undefined,
+      ethnicity: formData.ethnicity || undefined,
+      religion: formData.religion || undefined,
+      education: formData.education || undefined,
+      graduationStatus: formData.graduationStatus || undefined,
+      partyMember: formData.partyMember || undefined,
+      familyInfo: formData.familyInfo || undefined,
     };
 
     try {
@@ -199,33 +224,35 @@ const MilitaryService = () => {
       resetForm();
       await loadList();
     } catch (error: any) {
-      if (
-        error.message?.includes("Unique constraint failed") ||
-        error.message?.includes("idNumber")
-      ) {
-        setIdNumberError("CMND/CCCD đã tồn tại");
-      } else {
-        console.error("Error:", error);
-        alert("Có lỗi xảy ra, vui lòng thử lại");
-      }
+      console.error("Error:", error);
+      alert("Có lỗi xảy ra, vui lòng thử lại");
     }
   };
 
   const handleGenerateCode = async () => {
     const { code } = await getProfileCode("HS", 6);
-    setFormData((prev) => ({ ...prev, code }));
+    setFormData((prev) => ({ ...prev, recordCode: code }));
+  };
+
+  const handleViewDetail = (id: string) => {
+    navigate(`/military/detail/${id}`);
   };
 
   const handleEdit = (rec: ServiceRecord) => {
     setEditing(rec);
     setFormData({
-      code: rec.code || "",
+      recordCode: rec.recordCode || "",
       fullName: rec.fullName,
       dateOfBirth: rec.dateOfBirth,
-      idNumber: rec.idNumber,
-      ward: rec.ward || "",
-      unit: rec.unit || "",
-      status: rec.status,
+      occupation: rec.occupation || "",
+      permanentResidence: rec.permanentResidence || "",
+      specificAddress: rec.specificAddress || "",
+      ethnicity: rec.ethnicity || "",
+      religion: rec.religion || "",
+      education: rec.education || "",
+      graduationStatus: rec.graduationStatus || "",
+      partyMember: rec.partyMember || "",
+      familyInfo: rec.familyInfo || "",
     });
   };
   const handleDelete = async (id: string) => {
@@ -242,6 +269,36 @@ const MilitaryService = () => {
     setDeleteConfirm({ show: false, id: "", name: "" });
   };
 
+  const handleExportExcel = () => {
+    // Chuẩn bị dữ liệu cho Excel
+    const excelData = paginatedRecords.map((record, index) => ({
+      STT: index + 1,
+      "Mã hồ sơ": record.recordCode,
+      "Họ và tên": record.fullName,
+      "Ngày sinh": record.dateOfBirth,
+      "Nghề nghiệp": record.occupation || "",
+      "Hộ khẩu thường trú": record.permanentResidence || "",
+      "Địa chỉ cụ thể": record.specificAddress || "",
+      "Dân tộc": record.ethnicity || "",
+      "Tôn giáo": record.religion || "",
+      "Học vấn, Chuyên môn kỹ thuật": record.education || "",
+      "Đã tốt nghiệp hoặc niên khóa đang học": record.graduationStatus || "",
+      "Đảng viên, đoàn viên hay không": record.partyMember || "",
+      "Thông tin Cha, Mẹ, Vợ/Chồng, nghề nghiệp": record.familyInfo || "",
+    }));
+
+    // Tạo workbook và worksheet
+    const ws = XLSX.utils.json_to_sheet(excelData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Danh sách hồ sơ");
+
+    // Xuất file
+    const fileName = `Danh_sach_ho_so_trang_${currentPage}_${
+      new Date().toISOString().split("T")[0]
+    }.xlsx`;
+    XLSX.writeFile(wb, fileName);
+  };
+
   return (
     <div className="px-4 py-6 sm:px-0">
       <div className="max-w-7xl mx-auto">
@@ -256,12 +313,25 @@ const MilitaryService = () => {
             <div className="space-y-4">
               <input
                 type="text"
-                placeholder="Tìm theo mã hồ sơ/họ tên/CMND/CCCD/Khu phố"
+                placeholder="Tìm theo mã hồ sơ/họ tên"
                 className="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
               />
-              <select
+              <input
+                type="date"
+                placeholder="dd/mm/yyyy"
+                className="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+
+              <input
+                type="text"
+                placeholder="Tìm theo địa chỉ cụ thể"
+                className="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={addressFilter}
+                onChange={(e) => setAddressFilter(e.target.value)}
+              />
+              {/* <select
                 className="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
@@ -272,19 +342,7 @@ const MilitaryService = () => {
                     {s}
                   </option>
                 ))}
-              </select>
-              <select
-                className="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={wardFilter}
-                onChange={(e) => setWardFilter(e.target.value)}
-              >
-                <option value="">Tất cả khu phố</option>
-                {wards.map((w) => (
-                  <option key={w} value={w}>
-                    {w}
-                  </option>
-                ))}
-              </select>
+              </select> */}
             </div>
           </div>
 
@@ -303,15 +361,18 @@ const MilitaryService = () => {
                   Mã hồ sơ
                 </label>
                 <input
-                  name="code"
-                  value={formData.code}
+                  name="recordCode"
+                  value={formData.recordCode}
                   onChange={(e) => {
-                    setFormData((prev) => ({ ...prev, code: e.target.value }));
-                    if (e.target.value && errors.code)
-                      setErrors((prev) => ({ ...prev, code: false }));
+                    setFormData((prev) => ({
+                      ...prev,
+                      recordCode: e.target.value,
+                    }));
+                    if (e.target.value && errors.recordCode)
+                      setErrors((prev) => ({ ...prev, recordCode: false }));
                   }}
                   className={`w-full border rounded-md px-3 py-2 ${
-                    errors.code ? "border-red-500 focus:ring-red-500" : ""
+                    errors.recordCode ? "border-red-500 focus:ring-red-500" : ""
                   }`}
                 />
                 <button
@@ -321,7 +382,7 @@ const MilitaryService = () => {
                 >
                   Sinh mã tự động
                 </button>
-                {errors.code && (
+                {errors.recordCode && (
                   <p className="text-sm text-red-600 mt-1">
                     Vui lòng điền vào ô này
                   </p>
@@ -382,50 +443,44 @@ const MilitaryService = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  CMND/CCCD
+                  Nghề nghiệp
                 </label>
-                <input
-                  name="idNumber"
-                  value={formData.idNumber}
-                  onChange={(e) => {
+                <textarea
+                  name="occupation"
+                  value={formData.occupation}
+                  onChange={(e) =>
                     setFormData((prev) => ({
                       ...prev,
-                      idNumber: e.target.value,
-                    }));
-                    if (e.target.value && errors.idNumber)
-                      setErrors((prev) => ({ ...prev, idNumber: false }));
-                    if (idNumberError) setIdNumberError("");
-                  }}
-                  className={`w-full border rounded-md px-3 py-2 ${
-                    errors.idNumber || idNumberError
-                      ? "border-red-500 focus:ring-red-500"
-                      : ""
-                  }`}
-                />
-                {errors.idNumber && (
-                  <p className="text-sm text-red-600 mt-1">
-                    Vui lòng điền vào ô này
-                  </p>
-                )}
-                {idNumberError && (
-                  <p className="text-sm text-red-600 mt-1">{idNumberError}</p>
-                )}
+                      occupation: e.target.value,
+                    }))
+                  }
+                  rows={3}
+                  placeholder="Ví dụ: Nghề nghiệp: Kỹ sư phần mềm&#10;Nơi làm việc: Công ty ABC&#10;Nhóm ngạch: Nhóm 3&#10;Mức lương: 15 triệu đồng"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
+                ></textarea>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Khu phố
+                  Hộ khẩu thường trú (Khu phố)
                 </label>
                 <select
-                  name="ward"
-                  value={formData.ward}
-                  onChange={(e) => {
-                    setFormData((prev) => ({ ...prev, ward: e.target.value }));
-                    if (e.target.value && errors.ward)
-                      setErrors((prev) => ({ ...prev, ward: false }));
-                  }}
-                  className={`w-full border rounded-md px-3 py-2 ${
-                    errors.ward ? "border-red-500 focus:ring-red-500" : ""
+                  className={`w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    errors.permanentResidence
+                      ? "border-red-500 focus:ring-red-500"
+                      : ""
                   }`}
+                  value={formData.permanentResidence}
+                  onChange={(e) => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      permanentResidence: e.target.value,
+                    }));
+                    if (e.target.value && errors.permanentResidence)
+                      setErrors((prev) => ({
+                        ...prev,
+                        permanentResidence: false,
+                      }));
+                  }}
                 >
                   <option value="">Chọn khu phố</option>
                   {wards.map((w) => (
@@ -434,7 +489,7 @@ const MilitaryService = () => {
                     </option>
                   ))}
                 </select>
-                {errors.ward && (
+                {errors.permanentResidence && (
                   <p className="text-sm text-red-600 mt-1">
                     Vui lòng điền vào ô này
                   </p>
@@ -442,38 +497,137 @@ const MilitaryService = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Đơn vị
+                  Địa chỉ cụ thể
                 </label>
                 <input
-                  name="unit"
-                  value={formData.unit}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, unit: e.target.value }))
-                  }
+                  name="specificAddress"
+                  value={formData.specificAddress}
+                  onChange={(e) => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      specificAddress: e.target.value,
+                    }));
+                  }}
                   className="w-full border rounded-md px-3 py-2"
+                  placeholder="Ví dụ: 123 Đường ABC, Phường XYZ"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Trạng thái
+                  Dân tộc
                 </label>
-                <select
-                  name="status"
-                  value={formData.status}
+                <input
+                  name="ethnicity"
+                  value={formData.ethnicity}
                   onChange={(e) =>
                     setFormData((prev) => ({
                       ...prev,
-                      status: e.target.value as ServiceRecord["status"],
+                      ethnicity: e.target.value,
                     }))
                   }
-                  className="w-full border rounded-md px-3 py-2"
+                  placeholder="Ví dụ: Kinh"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Tôn giáo
+                </label>
+                <input
+                  name="religion"
+                  value={formData.religion}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      religion: e.target.value,
+                    }))
+                  }
+                  placeholder="Ví dụ: Phật giáo"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Học vấn, Chuyên môn kỹ thuật
+                </label>
+                <textarea
+                  name="education"
+                  value={formData.education}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      education: e.target.value,
+                    }))
+                  }
+                  rows={2}
+                  placeholder="Ví dụ: 12/12, Cử nhân CNTT"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
+                ></textarea>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Đã tốt nghiệp hoặc niên khóa đang học
+                </label>
+                <textarea
+                  name="graduationStatus"
+                  value={formData.graduationStatus}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      graduationStatus: e.target.value,
+                    }))
+                  }
+                  rows={2}
+                  placeholder="Ví dụ: Tốt nghiệp năm 2022 hoặc Đang học khóa 2023-2027"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
+                ></textarea>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Đảng viên, đoàn viên hay không
+                </label>
+                <textarea
+                  name="partyMember"
+                  value={formData.partyMember}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      partyMember: e.target.value,
+                    }))
+                  }
+                  rows={2}
+                  placeholder="Ví dụ: Đảng viên, Đoàn viên, hoặc Không"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
+                ></textarea>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="familyInfo"
+                  className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  {statusOptions.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
+                  Thông tin Cha, Mẹ, Vợ/Chồng, nghề nghiệp
+                </label>
+                <textarea
+                  id="familyInfo"
+                  name="familyInfo"
+                  placeholder="Ví dụ: 
+                  Cha: Nguyễn Văn A, sinh năm 1960, nghề nghiệp: Công nhân
+                  Mẹ: Trần Thị B, sinh năm 1965, nghề nghiệp: Nội trợ 
+                  Vợ: Lê Thị C , sinh năm 1995, nghề nghiệp: Giáo viên"
+                  value={formData.familyInfo}
+                  onChange={(e) => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      familyInfo: e.target.value,
+                    }));
+                  }}
+                  rows={4}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
+                ></textarea>
               </div>
               <div className="flex items-end gap-3">
                 <button
@@ -502,46 +656,169 @@ const MilitaryService = () => {
             <h2 className="text-lg font-semibold text-gray-900">
               Danh sách hồ sơ
             </h2>
-            <span className="text-sm text-gray-500">
-              {filtered.length} bản ghi
-            </span>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-gray-500">
+                {filtered.length} bản ghi
+              </span>
+              <button
+                onClick={handleExportExcel}
+                className="flex items-center gap-2 px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors"
+                title="Xuất Excel trang hiện tại"
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
+                </svg>
+                Xuất Excel
+              </button>
+            </div>
           </div>
           <div className="overflow-x-auto">
-            <table className="min-w-full">
-              <thead>
-                <tr className="bg-gray-50 text-left text-sm text-gray-600">
-                  <th className="px-6 py-3">Mã hồ sơ</th>
-                  <th className="px-6 py-3">Họ tên</th>
-                  <th className="px-6 py-3">Ngày sinh</th>
-                  <th className="px-6 py-3">CMND/CCCD</th>
-                  <th className="px-6 py-3">Khu phố</th>
-                  <th className="px-6 py-3">Đơn vị</th>
-                  <th className="px-6 py-3">Trạng thái</th>
-                  <th className="px-6 py-3 text-right">Thao tác</th>
+            {" "}
+            <table className="min-w-full divide-y divide-gray-200 shadow-lg rounded-lg overflow-hidden">
+              <thead className="bg-indigo-600">
+                <tr className="text-center text-xs font-semibold text-white uppercase tracking-wider leading-tight">
+                  <th className="px-3 py-3 w-[8%]">Mã&nbsp;hồ&nbsp;sơ</th>
+
+                  <th className="px-3 py-3 w-[14%] whitespace-normal">
+                    <div className="block">Họ tên&nbsp;khai&nbsp;sinh</div>
+                    <div className="block">
+                      Ngày&nbsp;tháng&nbsp;năm&nbsp;sinh
+                    </div>
+                  </th>
+
+                  <th className="px-3 py-3 w-[14%] whitespace-normal">
+                    <div className="block">Nghề&nbsp;nghiệp</div>
+                    <div className="block">Nơi làm việc</div>
+                    <div className="block">Nhóm&nbsp;ngạch</div>
+                    <div className="block">Mức lương</div>
+                  </th>
+
+                  <th className="px-3 py-3 w-[16%] whitespace-normal">
+                    <div className="block">
+                      Hộ&nbsp;khẩu&nbsp;thường&nbsp;trú
+                    </div>
+                    <div className="block">
+                      Nơi&nbsp;ở&nbsp;hiện&nbsp;nay&nbsp;của&nbsp;bản&nbsp;thân
+                    </div>
+                  </th>
+
+                  <th className="px-3 py-3 w-[8%] whitespace-normal">
+                    <div className="block">Dân&nbsp;tộc</div>
+                    <div className="block">Tôn&nbsp;giáo</div>
+                  </th>
+
+                  <th className="px-3 py-3 w-[10%] whitespace-normal">
+                    <div className="block">Học&nbsp;vấn</div>
+                    <div className="block">
+                      Chuyên&nbsp;môn&nbsp;kỹ&nbsp;thuật
+                    </div>
+                  </th>
+
+                  <th className="px-3 py-3 w-[10%] whitespace-normal">
+                    <div className="block">Đã&nbsp;tốt&nbsp;nghiệp</div>
+                    <div className="block">
+                      Hoặc&nbsp;niên&nbsp;khóa&nbsp;đang&nbsp;học
+                    </div>
+                  </th>
+
+                  <th className="px-3 py-3 w-[8%] whitespace-normal">
+                    <div className="block">Đảng&nbsp;viên</div>
+                    <div className="block">Đoàn&nbsp;viên</div>
+                  </th>
+
+                  <th className="px-3 py-3 w-[12%] whitespace-normal">
+                    <div className="block">
+                      Thông&nbsp;tin&nbsp;Cha,&nbsp;Mẹ
+                    </div>
+                    <div className="block">Vợ/Chồng</div>
+                  </th>
+
+                  <th className="px-3 py-3 w-[6%] whitespace-normal">
+                    Thao&nbsp;tác
+                  </th>
                 </tr>
               </thead>
-              <tbody>
-                {paginatedRecords.map((r) => (
-                  <tr key={r.id} className="border-t">
-                    <td className="px-6 py-3 font-mono text-sm">
-                      {r.code || "-"}
+              <tbody className="bg-white divide-y divide-gray-200">
+                {paginatedRecords.map((r, index) => (
+                  <tr
+                    key={r.id}
+                    className={`hover:bg-indigo-50 transition duration-150 ease-in-out ${
+                      index % 2 === 1 ? "bg-gray-50" : ""
+                    }`}
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {r.recordCode || "-"}
                     </td>
-                    <td className="px-6 py-3">{r.fullName}</td>
-                    <td className="px-6 py-3">{r.dateOfBirth}</td>
-                    <td className="px-6 py-3">{r.idNumber}</td>
-                    <td className="px-6 py-3">{r.ward || "-"}</td>
-                    <td className="px-6 py-3">{r.unit || "-"}</td>
-                    <td className="px-6 py-3">{r.status}</td>
-                    <td className="px-6 py-3 text-right space-x-2">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                      <span className="font-medium text-gray-700">
+                        {r.fullName}
+                      </span>
+                      <br />
+                      {r.dateOfBirth}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                      {r.occupation || "-"}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                      <div>
+                        <span className="font-medium">Khu phố:</span>{" "}
+                        {r.permanentResidence || "-"}
+                      </div>
+                      {r.specificAddress && (
+                        <div className="mt-1">
+                          <span className="font-medium">Địa chỉ:</span>{" "}
+                          {r.specificAddress}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                      <div>
+                        <span className="font-medium">Dân tộc:</span>{" "}
+                        {r.ethnicity || "-"}
+                      </div>
+                      <div>
+                        <span className="font-medium">Tôn giáo:</span>{" "}
+                        {r.religion || "-"}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                      {r.education || "-"}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                      {r.graduationStatus || "-"}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                      {r.partyMember || "-"}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-500 text-center">
+                      {r.familyInfo || "-"}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                      <button
+                        onClick={() => handleViewDetail(r.id)}
+                        className="text-blue-600 hover:text-blue-900 mr-3 font-semibold"
+                      >
+                        Thông tin chi tiết
+                      </button>
                       <button
                         onClick={() => handleEdit(r)}
-                        className="text-blue-600 hover:underline"
+                        className="text-indigo-600 hover:text-indigo-900 mr-3 font-semibold"
                       >
                         Sửa
                       </button>
                       <button
                         onClick={() => confirmDelete(r.id, r.fullName)}
-                        className="text-red-600 hover:underline"
+                        className="text-red-600 hover:text-red-900 font-semibold"
                       >
                         Xóa
                       </button>
