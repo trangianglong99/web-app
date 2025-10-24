@@ -99,3 +99,47 @@ model Attendance {
   createdAt DateTime          @default(now())
   updatedAt DateTime          @updatedAt
 }
+
+model ProfileForm {
+  id                    String    @id @default(uuid())
+  
+  // Thông tin cá nhân
+  fullName              String    // Họ và tên
+  dateOfBirth           DateTime  // Ngày sinh
+  idNumber              String    // CMND/CCCD
+  placeOfBirth          String    // Nơi sinh
+  nationality           String?   @default("Việt Nam") // Quốc tịch
+  religion              String?   // Tôn giáo
+  education             String?   // Trình độ học vấn
+  occupation            String?   // Nghề nghiệp
+  address               String    // Địa chỉ
+  phone                 String    // Số điện thoại
+  
+  // Thông tin gia đình
+  fatherName            String    // Họ tên cha
+  fatherOccupation      String    // Nghề nghiệp cha
+  fatherAddress         String?   // Địa chỉ cha
+  motherName            String    // Họ tên mẹ
+  motherOccupation      String    // Nghề nghiệp mẹ
+  motherAddress         String?   // Địa chỉ mẹ
+  
+  // Thông tin nghĩa vụ quân sự
+  militaryCode          String?   // Mã hồ sơ
+  ward                  String?   // Khu phố
+  unit                  String?   // Đơn vị
+  status                String?   @default("Chưa nhập ngũ") // Trạng thái
+  enlistmentDate        DateTime? // Ngày nhập ngũ
+  dischargeDate         DateTime? // Ngày xuất ngũ
+  militaryRank          String?   // Cấp bậc
+  militaryUnit          String?   // Đơn vị quân đội
+  
+  // Thông tin bổ sung
+  healthStatus          String?   // Tình trạng sức khỏe
+  criminalRecord        String?   // Tiền án tiền sự
+  politicalBackground   String?   // Lý lịch chính trị
+  foreignTravel         String?   // Đi nước ngoài
+  notes                 String?   // Ghi chú
+  
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+}

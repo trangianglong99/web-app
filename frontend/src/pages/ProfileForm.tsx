@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { apiPost, apiGet } from "../lib/api";
 
 type ProfileData = {
   // Thông tin cá nhân
@@ -75,6 +76,8 @@ const ProfileForm = () => {
   const [formData, setFormData] = useState<ProfileData>(initialData);
   const [errors, setErrors] = useState<{[key: string]: boolean}>({});
   const [showPreview, setShowPreview] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [savedProfiles, setSavedProfiles] = useState<any[]>([]);
 
   const wards = [
     "Trung", "Đông", "Phú Hội", "đồng an 1", "đồng an 2", "đồng an 3",
@@ -82,6 +85,20 @@ const ProfileForm = () => {
   ];
 
   const statusOptions = ["Chưa nhập ngũ", "Đang tại ngũ", "Xuất ngũ"];
+
+  // Load saved profiles on component mount
+  useEffect(() => {
+    loadSavedProfiles();
+  }, []);
+
+  const loadSavedProfiles = async () => {
+    try {
+      const response = await apiGet("/profile-form");
+      setSavedProfiles(response.data || []);
+    } catch (error) {
+      console.error("Error loading saved profiles:", error);
+    }
+  };
 
   const handleInputChange = (field: keyof ProfileData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -113,6 +130,60 @@ const ProfileForm = () => {
       return;
     }
     setShowPreview(true);
+  };
+
+  const saveProfile = async () => {
+    if (!validateForm()) {
+      alert("Vui lòng điền đầy đủ các trường bắt buộc");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await apiPost("/profile-form", formData);
+      alert("Lưu hồ sơ thành công!");
+      setFormData(initialData);
+      loadSavedProfiles(); // Reload the list
+    } catch (error) {
+      console.error("Error saving profile:", error);
+      alert("Có lỗi xảy ra khi lưu hồ sơ");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadProfile = (profile: any) => {
+    setFormData({
+      fullName: profile.fullName || "",
+      dateOfBirth: profile.dateOfBirth ? new Date(profile.dateOfBirth).toISOString().split('T')[0] : "",
+      idNumber: profile.idNumber || "",
+      placeOfBirth: profile.placeOfBirth || "",
+      nationality: profile.nationality || "Việt Nam",
+      religion: profile.religion || "",
+      education: profile.education || "",
+      occupation: profile.occupation || "",
+      address: profile.address || "",
+      phone: profile.phone || "",
+      fatherName: profile.fatherName || "",
+      fatherOccupation: profile.fatherOccupation || "",
+      fatherAddress: profile.fatherAddress || "",
+      motherName: profile.motherName || "",
+      motherOccupation: profile.motherOccupation || "",
+      motherAddress: profile.motherAddress || "",
+      militaryCode: profile.militaryCode || "",
+      ward: profile.ward || "",
+      unit: profile.unit || "",
+      status: profile.status || "Chưa nhập ngũ",
+      enlistmentDate: profile.enlistmentDate ? new Date(profile.enlistmentDate).toISOString().split('T')[0] : "",
+      dischargeDate: profile.dischargeDate ? new Date(profile.dischargeDate).toISOString().split('T')[0] : "",
+      militaryRank: profile.militaryRank || "",
+      militaryUnit: profile.militaryUnit || "",
+      healthStatus: profile.healthStatus || "",
+      criminalRecord: profile.criminalRecord || "",
+      politicalBackground: profile.politicalBackground || "",
+      foreignTravel: profile.foreignTravel || "",
+      notes: profile.notes || "",
+    });
   };
 
   const downloadAsText = () => {
@@ -182,6 +253,33 @@ Người lập hồ sơ
         <h1 className="text-3xl font-bold text-gray-900 mb-6">
           Điền thông tin hồ sơ nghĩa vụ quân sự
         </h1>
+
+        {/* Saved Profiles Section */}
+        {savedProfiles.length > 0 && (
+          <div className="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+              Hồ sơ đã lưu ({savedProfiles.length})
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {savedProfiles.map((profile) => (
+                <div key={profile.id} className="border rounded-lg p-4 hover:bg-gray-50">
+                  <h3 className="font-medium text-gray-900">{profile.fullName}</h3>
+                  <p className="text-sm text-gray-600">CMND: {profile.idNumber}</p>
+                  <p className="text-sm text-gray-600">Khu phố: {profile.ward || "Chưa có"}</p>
+                  <p className="text-sm text-gray-600">
+                    Tạo: {new Date(profile.createdAt).toLocaleDateString('vi-VN')}
+                  </p>
+                  <button
+                    onClick={() => loadProfile(profile)}
+                    className="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium"
+                  >
+                    Tải lên form
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="bg-white rounded-lg shadow p-6">
           <form className="space-y-8">
@@ -652,6 +750,14 @@ Người lập hồ sơ
 
             {/* Nút xuất file */}
             <div className="flex justify-center gap-4 pt-6">
+              <button
+                type="button"
+                onClick={saveProfile}
+                disabled={isLoading}
+                className="bg-purple-600 text-white px-8 py-3 rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 font-semibold disabled:opacity-50"
+              >
+                {isLoading ? "Đang lưu..." : "Lưu hồ sơ"}
+              </button>
               <button
                 type="button"
                 onClick={generatePreview}
