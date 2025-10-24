@@ -63,6 +63,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
     { path: "/military", label: "Nghĩa vụ QS" },
     { path: "/militia", label: "Dân quân TT" },
     { path: "/attendance", label: "Dự bị động viên" },
+    { path: "/profile-form", label: "Điền hồ sơ" },
   ];
 
   return (

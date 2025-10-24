@@ -7,6 +7,7 @@ import Militia from "./pages/Militia";
 import Attendance from "./pages/Attendance";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ProfileForm from "./pages/ProfileForm";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -72,6 +73,7 @@ function App() {
         <Route path="/military/detail/:id" element={<MilitaryDetail />} />
         <Route path="/militia" element={<Militia />} />
         <Route path="/attendance" element={<Attendance />} />
+        <Route path="/profile-form" element={<ProfileForm />} />
         <Route path="/login" element={<Navigate to="/military" replace />} />
         <Route path="*" element={<Navigate to="/military" replace />} />
       </Routes>
