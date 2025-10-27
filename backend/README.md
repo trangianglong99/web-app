@@ -27,8 +27,40 @@
 
 ## Project setup
 
+### 1. Install dependencies
 ```bash
 $ yarn install
+# or
+$ npm install
+```
+
+### 2. Setup Environment Variables
+Create a `.env` file in the `backend` directory:
+
+```env
+# Database
+DATABASE_URL="file:./prisma/dev.db"
+
+# JWT Secret - Generate a strong secret key
+JWT_SECRET="MgmtProfile2024!@#$%^&*()_+-=WebAppJWTSecretKeyForSecureAuthenticationTokenGen"
+
+# Application Configuration
+PORT=3000
+NODE_ENV=development
+```
+
+**Generate JWT_SECRET (recommended):**
+```bash
+node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+```
+
+### 3. Setup Prisma
+```bash
+# Generate Prisma Client
+$ npx prisma generate
+
+# Run migrations (if needed)
+$ npx prisma migrate dev
 ```
 
 ## Compile and run the project
