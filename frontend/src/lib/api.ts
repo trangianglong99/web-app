@@ -1,5 +1,5 @@
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
-const withBase = (path: string) => `${BASE_URL}${path}`;
+const withBase = (path: string) => `${BASE_URL}/api${path}`;
 
 const getAuthHeaders = (includeAuth = true) => {
   const token = localStorage.getItem('token');
