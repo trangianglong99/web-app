@@ -1,5 +1,6 @@
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
-const withBase = (path: string) => `${BASE_URL}${path}`;
+// Use relative path for API calls (Vite proxy will handle /api)
+const BASE_URL = "";
+const withBase = (path: string) => `${BASE_URL}/api${path}`;
 
 const getAuthHeaders = (includeAuth = true) => {
   const token = localStorage.getItem('token');
